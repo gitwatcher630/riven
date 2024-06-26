@@ -37,7 +37,7 @@ class TorBoxUsenetScraper:
             return False
 
         try:
-            response = ping(f"{self.base_url}/torrents/imdb:tt0944947?metadata=false&season=1&episode=1", timeout=self.timeout)
+            response = ping(f"{self.base_url}/usenet/imdb:tt0944947?metadata=false&season=1&episode=1", timeout=self.timeout)
             return response.ok
         except Exception as e:
             logger.exception(f"Error validating TorBox Scraper: {e}")
@@ -122,8 +122,15 @@ class TorBoxUsenetScraper:
                 continue
             # Language
             language = title_parsed_data.language
-            if not language:
+            resolution = title_parsed_data.resolution
+            if not language or not resolution:
                 continue
+            # Hardcode a non english language for now
+            if not language == "German":
+                continue
+            if not resolution == "1080p" and not resolution == "2160p":
+                continue
+
             # "title_parsed_data": {
             #"resolution": "720p",
             # "quality": "WEBRip",
