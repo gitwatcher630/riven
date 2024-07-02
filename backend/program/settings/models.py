@@ -225,6 +225,11 @@ class TorBoxScraperConfig(Observable):
     timeout: int = 30
     ratelimit: bool = True
 
+class TorBoxUsenetScraperConfig(Observable):
+    enabled: bool = False
+    timeout: int = 30
+    ratelimit: bool = True
+
 
 class ScraperModel(Observable):
     after_2: float = 2
@@ -237,6 +242,7 @@ class ScraperModel(Observable):
     orionoid: OrionoidConfig = OrionoidConfig()
     annatar: AnnatarConfig = AnnatarConfig()
     torbox_scraper: TorBoxScraperConfig = TorBoxScraperConfig()
+    torbox_usenet_scraper: TorBoxUsenetScraperConfig = TorBoxUsenetScraperConfig()
     mediafusion: MediafusionConfig = MediafusionConfig()
     zilean: ZileanConfig = ZileanConfig()
 

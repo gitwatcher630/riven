@@ -14,6 +14,7 @@ from program.scrapers.orionoid import Orionoid
 from program.scrapers.prowlarr import Prowlarr
 from program.scrapers.shared import _parse_results
 from program.scrapers.torbox import TorBoxScraper
+from program.scrapers.torbox_usenet import TorBoxUsenetScraper
 from program.scrapers.torrentio import Torrentio
 from program.scrapers.zilean import Zilean
 from program.settings.manager import settings_manager
@@ -33,6 +34,7 @@ class Scraping:
             Orionoid: Orionoid(),
             Jackett: Jackett(),
             TorBoxScraper: TorBoxScraper(),
+            TorBoxUsenetScraper: TorBoxUsenetScraper(),
             Mediafusion: Mediafusion(),
             Prowlarr: Prowlarr(),
             Zilean: Zilean()

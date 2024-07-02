@@ -44,8 +44,10 @@ class TorBoxDownloader:
         logger.info(f"Downloading {item.log_string} from TorBox")
         if self.settings.usenet_enabled:
             # Usenet is fast so ignore caching?
-
-
+            if self.download_via_usenet(item=item):
+                yield item
+            else:
+                logger.info(f"Failed to download {item.log_string} from TorBox via Usenet")
 
         if self.is_cached(item):
             self.download(item)
@@ -54,10 +56,10 @@ class TorBoxDownloader:
 
     def is_cached(self, item: MediaItem):
         streams = [hash for hash in item.streams]
-        usenet_data = self.get_usenet_download_cached(streams)
-        for hash in usenet_data:
-            item.active_stream=usenet_data[hash]
-            return True
+        #usenet_data = self.get_usenet_download_cached(streams)
+        #for hash in usenet_data:
+        #    item.active_stream=usenet_data[hash]
+        #    return True
         torrent_data = self.get_web_download_cached(streams)
         for hash in torrent_data:
             item.active_stream=torrent_data[hash]
@@ -79,7 +81,15 @@ class TorBoxDownloader:
             id = self.create_usenet_download(nzb_link=nzb_file_url)
         for data in usenet_list:
             if data["id"] == id:
-                
+                with contextlib.suppress(GarbageTorrent, TypeError):
+                    for file in data["files"]:
+                        if file["size"] > 10000:
+                            parsed_file = parse(file["short_name"])
+                            if parsed_file.type == "movie":
+                                item.set("folder", ".")
+                                item.set("alternative_folder", ".")
+                                item.set("file", file["short_name"])
+                                return True
             
 
     def download(self, item: MediaItem):

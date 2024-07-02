@@ -15,7 +15,7 @@ from utils.request import RateLimiter, RateLimitExceeded, get, ping
 class TorBoxUsenetScraper:
     def __init__(self, hash_cache: HashCache):
         self.key = "torbox"
-        self.settings = settings_manager.settings.scraping.torbox_scraper
+        self.settings = settings_manager.settings.scraping.torbox_usenet_scraper
         self.base_url = "http://search-api.torbox.app"
         self.user_plan = None
         self.timeout = self.settings.timeout
