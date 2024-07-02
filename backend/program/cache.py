@@ -31,6 +31,21 @@ class HashCache:
             for infohash in self.cache:
                 yield infohash
 
+    def get_nzb_file_url(self, infohash: str) -> str:
+        if not infohash:
+            raise ValueError("Infohash is required")
+        with self.lock:
+            entry = self._get_cache_entry(infohash)
+        return entry["nzb"]
+    
+    def set_nzb_file_url(self, infohash: str, nzb: str):
+        if not infohash:
+            raise ValueError("Infohash is required")
+        with self.lock:
+            entry = self._get_cache_entry(infohash)
+            entry["nzb"] = nzb
+            self.cache[infohash] = entry
+
     def is_blacklisted(self, infohash: str) -> bool:
         """Check if a hash is blacklisted."""
         with self.lock:
@@ -77,7 +92,7 @@ class HashCache:
 
     def _get_cache_entry(self, infohash: str) -> dict:
         """Helper function to get a cache entry or create a new one if it doesn't exist."""
-        return self.cache.get(infohash, {"blacklisted": False, "downloaded": False, "added_at": datetime.now()})
+        return self.cache.get(infohash, {"blacklisted": False, "downloaded": False, "added_at": datetime.now(), "nzb": ""})
 
 
 hash_cache = HashCache()

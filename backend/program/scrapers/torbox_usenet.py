@@ -3,6 +3,7 @@ from typing import Dict, Generator
 from program.media.item import Episode, MediaItem, Movie, Season, Show
 from program.settings.manager import settings_manager
 from program.settings.versions import models
+from ..cache import HashCache
 from requests import RequestException
 from requests.exceptions import ConnectTimeout, ReadTimeout, RetryError
 from RTN import RTN, Torrent, sort_torrents
@@ -12,12 +13,13 @@ from utils.request import RateLimiter, RateLimitExceeded, get, ping
 
 
 class TorBoxUsenetScraper:
-    def __init__(self):
+    def __init__(self, hash_cache: HashCache):
         self.key = "torbox"
         self.settings = settings_manager.settings.scraping.torbox_scraper
         self.base_url = "http://search-api.torbox.app"
         self.user_plan = None
         self.timeout = self.settings.timeout
+        self.hash_cache = hash_cache
         self.initialized = self.validate()
         if not self.initialized:
             return
@@ -113,9 +115,12 @@ class TorBoxUsenetScraper:
         for nzb_data in response.data.data.nzbs:
             raw_title = nzb_data.raw_title
             info_hash = nzb_data.hash
+            nzb = nzb_data.nzb
             # title_parsed_data
             title_parsed_data = nzb_data.title_parsed_data
             if not info_hash or not raw_title:
+                continue
+            if not nzb:
                 continue
             # Filter by language & resolution
             if not title_parsed_data:
@@ -143,5 +148,6 @@ class TorBoxUsenetScraper:
             # },
 
             nzbs[info_hash] = raw_title
+            self.hash_cache.set_nzb_file_url(infohash=info_hash, nzb=nzb)
 
         return nzbs, len(response.data.data.torrents)

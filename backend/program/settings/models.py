@@ -36,6 +36,7 @@ class DebridModel(Observable):
 class TorboxModel(Observable):
     enabled: bool = False
     api_key: str = ""
+    usenet_enabled: bool = False
 
 
 class DownloadersModel(Observable):

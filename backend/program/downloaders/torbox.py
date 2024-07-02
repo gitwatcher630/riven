@@ -3,6 +3,7 @@ import time
 from datetime import datetime
 from typing import Generator
 
+from ..cache import HashCache
 from program.media.item import MediaItem, Movie
 from program.settings.manager import settings_manager
 from RTN import parse
@@ -14,7 +15,7 @@ from utils.request import get, post
 class TorBoxDownloader:
     """TorBox Downloader"""
 
-    def __init__(self, hash_cache):
+    def __init__(self, hash_cache: HashCache):
         self.key = "torbox_downloader"
         self.settings = settings_manager.settings.downloaders.torbox
         self.api_key = self.settings.api_key
@@ -41,6 +42,11 @@ class TorBoxDownloader:
     def run(self, item: MediaItem) -> Generator[MediaItem, None, None]:
         """Download media item from TorBox"""   
         logger.info(f"Downloading {item.log_string} from TorBox")
+        if self.settings.usenet_enabled:
+            # Usenet is fast so ignore caching?
+
+
+
         if self.is_cached(item):
             self.download(item)
         yield item
@@ -48,10 +54,33 @@ class TorBoxDownloader:
 
     def is_cached(self, item: MediaItem):
         streams = [hash for hash in item.streams]
-        data = self.get_web_download_cached(streams)
-        for hash in data:
-            item.active_stream=data[hash]
+        usenet_data = self.get_usenet_download_cached(streams)
+        for hash in usenet_data:
+            item.active_stream=usenet_data[hash]
             return True
+        torrent_data = self.get_web_download_cached(streams)
+        for hash in torrent_data:
+            item.active_stream=torrent_data[hash]
+            return True
+
+    def download_via_usenet(self, item: MediaItem):
+        nzb_file_url = self.hash_cache.get_nzb_file_url(infohash=item.active_stream["hash"])
+        if not nzb_file_url:
+            return False
+        
+        exists = False
+        usenet_list = self.get_usenet_list()
+        for data in usenet_list:
+            if item.active_stream["hash"] == data["hash"]:
+                    id = data["id"]
+                    exists = True
+                    break
+        if not exists:
+            id = self.create_usenet_download(nzb_link=nzb_file_url)
+        for data in usenet_list:
+            if data["id"] == id:
+                
+            
 
     def download(self, item: MediaItem):
         if item.type == "movie":
@@ -85,6 +114,11 @@ class TorBoxDownloader:
         hash_string = ",".join(hash_list)
         response = get(f"{self.base_url}/webdl/checkcached?hash={hash_string}", additional_headers=self.headers, response_type=dict)
         return response.data["data"]
+    
+    def get_usenet_download_cached(self, hash_list):
+        hash_string = ",".join(hash_list)
+        response = get(f"{self.base_url}/usenet/checkcached?hash={hash_string}", additional_headers=self.headers, response_type=dict)
+        return response.data["data"]
 
     def get_user_data(self):
         response = get(f"{self.base_url}/user/me", additional_headers=self.headers, retry_if_failed=False)
@@ -95,6 +129,14 @@ class TorBoxDownloader:
         response = post(f"{self.base_url}/torrents/createtorrent", data={"magnet": magnet_url}, additional_headers=self.headers)
         return response.data.data.torrent_id
     
+    def create_usenet_download(self, nzb_link) -> int:
+        response = post(f"{self.base_url}/torrents/createtorrent", data={"link": nzb_link}, additional_headers=self.headers)
+        return response.data.data.usenetdownload_id
+
     def get_torrent_list(self) -> list:
         response = get(f"{self.base_url}/torrents/mylist", additional_headers=self.headers, response_type=dict)
+        return response.data["data"]
+    
+    def get_usenet_list(self) -> list:
+        response = get(f"{self.base_url}/usenet/mylist", additional_headers=self.headers, response_type=dict)
         return response.data["data"]
