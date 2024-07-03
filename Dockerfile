@@ -36,7 +36,7 @@ RUN pnpm run build && pnpm prune --prod
 FROM python:3.11-alpine
 LABEL name="Riven" \
       description="Riven Media Server" \
-      url="https://github.com/rivenmedia/riven"
+      url="https://github.com/gitwatcher630/riven"
 
 # Install system dependencies and Node.js
 ENV PYTHONUNBUFFERED=1
