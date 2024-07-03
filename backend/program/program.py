@@ -21,6 +21,7 @@ from program.scrapers import Scraping
 from program.settings.manager import settings_manager
 from program.settings.models import get_version
 from program.updaters import Updater
+from program.downloaders import Downloader
 from utils import data_dir_path
 from utils.logger import logger, scrub_logs
 
@@ -60,16 +61,13 @@ class Program(threading.Thread):
             Listrr: Listrr(),
             Mdblist: Mdblist(),
             TraktContent: TraktContent(),
+            Downloader: Downloader()
         }
         self.indexing_services = {TraktIndexer: TraktIndexer()}
         self.processing_services = {
             Scraping: Scraping(),
             Symlinker: Symlinker(self.media_items),
             Updater: Updater(),
-        }
-        self.downloader_services = {
-            Debrid: Debrid(hash_cache),
-            TorBoxDownloader: TorBoxDownloader(hash_cache),
         }
         # Depends on Symlinker having created the file structure so needs
         # to run after it
@@ -82,13 +80,14 @@ class Program(threading.Thread):
             logger.error("No Downloader service initialized, you must select at least one.")
         if not self.processing_services.get(Scraping).initialized:
             logger.error("No Scraping service initialized, you must select at least one.")
+        if not self.processing_services.get(Downloader).initialized:
+            logger.error("No downloading service initialized, you must select at least one.")
 
         self.services = {
             **self.library_services,
             **self.indexing_services,
             **self.requesting_services,
-            **self.processing_services,
-            **self.downloader_services,
+            **self.processing_services
         }
 
         if self.enable_trace:
@@ -102,7 +101,6 @@ class Program(threading.Thread):
                 any(s.initialized for s in self.library_services.values()),
                 any(s.initialized for s in self.indexing_services.values()),
                 all(s.initialized for s in self.processing_services.values()),
-                any(s.initialized for s in self.downloader_services.values()),
             )
         )
 
